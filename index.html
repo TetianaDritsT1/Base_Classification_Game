@@ -3,265 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwapNorm — DEX на Base</title>
+    <title>Base Ecosystem Sorter</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
         body {
-            background-color: #0b0f19;
-            color: #f1f5f9;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0052FF 0%, #111111 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .game-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #161616;
+            border: 1px solid rgba(0, 82, 255, 0.3);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        .header { text-align: center; margin-bottom: 25px; }
+        .title { font-size: 2.2rem; font-weight: bold; color: #fff; margin-bottom: 8px; }
+        .progress-bar { width: 100%; height: 14px; background: #262626; border-radius: 7px; overflow: hidden; margin-bottom: 15px; border: 1px solid rgba(0,82,255,0.2); }
+        .progress-fill { height: 100%; background: #0052FF; width: 0%; transition: width 0.4s ease; }
+        .score { font-size: 1.1rem; font-weight: 600; color: #93c5fd; }
+        .animals-area {
+            background: #1f1f1f;
+            border: 2px dashed rgba(0, 82, 255, 0.4);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            min-height: 100px;
             display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
         }
-        .dex-container {
-            background-color: #1e293b;
-            border-radius: 20px;
-            padding: 24px;
-            width: 420px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid #334155;
-        }
-        .dex-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .dex-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: #38bdf8;
-        }
-        .connect-btn {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
+        .animal-item {
+            background: #262626;
+            border: 1px solid rgba(0, 82, 255, 0.3);
             border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            padding: 12px 18px;
+            cursor: grab;
+            user-select: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
         }
-        .connect-btn:hover {
-            background-color: #2563eb;
-        }
-        .swap-box {
-            background-color: #0f172a;
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border: 1px solid #1e293b;
-        }
-        .swap-box label {
-            font-size: 13px;
-            color: #94a3b8;
-            display: block;
-            margin-bottom: 6px;
-        }
-        .input-row {
+        .animal-item:hover { transform: translateY(-2px); border-color: #0052FF; background: #2b2b2b; }
+        .animal-item:active { cursor: grabbing; transform: scale(0.95); }
+        .categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .category { background: #1a1a1a; border-radius: 16px; padding: 20px; border: 1px solid rgba(0,82,255,0.2); min-height: 180px; }
+        .category-title { font-size: 1.3rem; font-weight: bold; color: #93c5fd; margin-bottom: 15px; text-align: center; }
+        .drop-zone {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            min-height: 110px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px;
+            align-content: flex-start;
         }
-        .swap-input {
-            background: transparent;
-            border: none;
-            color: #ffffff;
-            font-size: 24px;
-            width: 60%;
-            outline: none;
+        .drop-zone.drag-over { background: rgba(0, 82, 255, 0.15); border-color: #0052FF; }
+        .feedback {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 18px 28px; border-radius: 14px; font-size: 1.2rem; font-weight: bold;
+            z-index: 1000; opacity: 0; transition: all 0.3s ease; pointer-events: none;
         }
-        .token-select {
-            background-color: #334155;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
+        .feedback.correct { background: #0052FF; color: white; }
+        .feedback.incorrect { background: #ef4444; color: white; }
+        .feedback.show { opacity: 1; }
+        .reset-btn {
+            background: #0052FF; color: white; border: none; padding: 14px 28px;
+            border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer;
+            transition: all 0.2s ease; display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,82,255,0.4);
         }
-        .action-btn {
-            width: 100%;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 14px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 10px;
-        }
-        .action-btn:hover {
-            background-color: #2563eb;
-        }
-        .status-log {
-            margin-top: 15px;
-            font-size: 13px;
-            color: #cbd5e1;
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 8px;
-            word-break: break-all;
-            max-height: 100px;
-            overflow-y: auto;
-        }
+        .reset-btn:hover { background: #003eb3; transform: translateY(-2px); }
+        .instructions { background: rgba(0,82,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 20px; text-align: center; font-size: 0.95rem; color: #93c5fd; border: 1px solid rgba(0,82,255,0.2); }
     </style>
 </head>
 <body>
-
-<div class="dex-container">
-    <div class="dex-header">
-        <div class="dex-title">SwapNorm</div>
-        <button id="connectWalletBtn" class="connect-btn" onclick="connectWallet()">Подключить</button>
-    </div>
-
-    <div class="swap-box">
-        <label>Продаете</label>
-        <div class="input-row">
-            <input type="number" id="amountIn" class="swap-input" placeholder="0.0">
-            <select id="tokenIn" class="token-select">
-                <option value="ETH">ETH</option>
-                <option value="USDC">USDC</option>
-                <option value="USDbC">USDbC</option>
-                <option value="DAI">DAI</option>
-            </select>
+    <div class="game-container">
+        <div class="header">
+            <h1 class="title">🔵 Base Ecosystem Sorter</h1>
+            <div class="instructions">Распределите элементы по категориям Web3 сети Base для получения Builder Rewards!</div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="score">Распределено: <span id="score">0</span> из <span id="total">9</span></div>
         </div>
-    </div>
 
-    <div class="swap-box">
-        <label>Получаете (приблизительно)</label>
-        <div class="input-row">
-            <input type="number" id="amountOut" class="swap-input" placeholder="0.0" disabled>
-            <select id="tokenOut" class="token-select">
-                <option value="USDC">USDC</option>
-                <option value="ETH">ETH</option>
-                <option value="USDbC">USDbC</option>
-                <option value="DAI">DAI</option>
-            </select>
+        <div class="animals-area" id="animalsArea">
+            <div class="animal-item" draggable="true" data-category="infra">⚡ Optimism OP Stack</div>
+            <div class="animal-item" draggable="true" data-category="dapps">🎨 Farcaster (SocialFi)</div>
+            <div class="animal-item" draggable="true" data-category="tokens">💎 ETH (Gas Token)</div>
+            <div class="animal-item" draggable="true" data-category="infra">🛡️ Coinbase Wallet</div>
+            <div class="animal-item" draggable="true" data-category="dapps">🛒 Onchain Commerce</div>
+            <div class="animal-item" draggable="true" data-category="tokens">💵 USDC on Base</div>
+            <div class="animal-item" draggable="true" data-category="infra">🚀 Smart Wallets</div>
+            <div class="animal-item" draggable="true" data-category="dapps">🎮 Base Arcade Game</div>
+            <div class="animal-item" draggable="true" data-category="tokens">🪙 Builder Rewards</div>
         </div>
+
+        <div class="categories">
+            <div class="category">
+                <div class="category-title">⚙️ Инфраструктура</div>
+                <div class="drop-zone" data-category="infra"></div>
+            </div>
+            <div class="category">
+                <div class="category-title">🌐 DApps & Соцсети</div>
+                <div class="drop-zone" data-category="dapps"></div>
+            </div>
+            <div class="category">
+                <div class="category-title">🪙 Токены & Награды</div>
+                <div class="drop-zone" data-category="tokens"></div>
+            </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetGame()">🔄 Перезапустить</button>
     </div>
 
-    <button class="action-btn" onclick="executeRealSwap()">Выполнить обмен</button>
+    <div class="feedback" id="feedback"></div>
 
-    <div id="statusLog" class="status-log" style="display:none;">Лог транзакции появится здесь...</div>
-</div>
+    <script>
+        let score = 0;
+        let total = 9;
+        let draggedElement = null;
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-<script>
-    const CONTRACT_ADDRESS = "0x002B4e7c39865d03E27D618A2AF2Bd8C54EDd549";
-    
-    const TOKEN_ADDRESSES = {
-        "ETH": "0x4200000000000000000000000000000000000006",
-        "USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        "USDbC": "0xd9aAEc86B65D86f6a7B5B1b0c42FFA531710b6Ca",
-        "DAI": "0x50c5725949A6F0c72E6C4a641F24049A917DB0cb"
-    };
+        function initGame() {
+            const animals = document.querySelectorAll('.animal-item');
+            const dropZones = document.querySelectorAll('.drop-zone');
 
-    const CONTRACT_ABI = [
-        "function executeSwap(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin, bool isEthIn) external payable"
-    ];
+            animals.forEach(animal => {
+                animal.addEventListener('dragstart', (e) => { draggedElement = e.target; e.target.style.opacity = '0.4'; });
+                animal.addEventListener('dragend', (e) => { e.target.style.opacity = '1'; draggedElement = null; });
+            });
 
-    let provider, signer, userAddress;
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', e => e.preventDefault());
+                zone.addEventListener('dragenter', e => { e.preventDefault(); e.target.classList.add('drag-over'); });
+                zone.addEventListener('dragleave', e => e.target.classList.remove('drag-over'));
+                zone.addEventListener('drop', handleDrop);
+            });
+            updateProgress();
+        }
 
-    async function connectWallet() {
-        if (window.ethereum) {
-            try {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                
-                const network = await provider.getNetwork();
-                if (network.chainId !== 8453) {
-                    alert("Пожалуйста, переключите сеть в MetaMask на Base!");
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_switchEthereumChain',
-                            params: [{ chainId: '0x2105' }],
-                        });
-                    } catch (switchError) {
-                        return;
+        function handleDrop(e) {
+            e.preventDefault();
+            const zone = e.target.closest('.drop-zone');
+            if(!zone) return;
+            zone.classList.remove('drag-over');
+
+            if (draggedElement) {
+                if (draggedElement.dataset.category === zone.dataset.category) {
+                    zone.appendChild(draggedElement);
+                    score++;
+                    showFeedback('Верно! Билдер-поинт зачислен 🎉', 'correct');
+                    updateProgress();
+                    if (score === total) {
+                        setTimeout(() => showFeedback('Поздравляем! Все элементы сети Base на местах! 🏆', 'correct'), 800);
                     }
+                } else {
+                    showFeedback('Неверная категория! Попробуйте снова 🤔', 'incorrect');
                 }
-
-                signer = provider.getSigner();
-                userAddress = await signer.getAddress();
-                
-                const btn = document.getElementById("connectWalletBtn");
-                btn.innerText = userAddress.substring(0, 6) + "..." + userAddress.substring(38);
-                logStatus("Кошелек успешно подключен!");
-            } catch (error) {
-                console.error(error);
-                alert("Ошибка подключения кошелька.");
             }
-        } else {
-            alert("Установите MetaMask или Coinbase Wallet!");
-        }
-    }
-
-    async function executeRealSwap() {
-        if (!signer) {
-            alert("Сначала подключите кошелек!");
-            return;
         }
 
-        const amountInVal = document.getElementById("amountIn").value;
-        const tokenInKey = document.getElementById("tokenIn").value;
-        const tokenOutKey = document.getElementById("tokenOut").value;
-
-        if (!amountInVal || amountInVal <= 0) {
-            alert("Введите корректную сумму для обмена!");
-            return;
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.className = `feedback ${type} show`;
+            setTimeout(() => feedback.classList.remove('show'), 2000);
         }
 
-        if (tokenInKey === tokenOutKey) {
-            alert("Нельзя обменивать одинаковые токены!");
-            return;
+        function updateProgress() {
+            document.getElementById('progressFill').style.width = (score / total) * 100 + '%';
+            document.getElementById('score').textContent = score;
         }
 
-        try {
-            logStatus("Подготовка транзакции...");
-            const parsedAmountIn = ethers.utils.parseUnits(amountInVal, 18);
-            const tokenInAddr = TOKEN_ADDRESSES[tokenInKey];
-            const tokenOutAddr = TOKEN_ADDRESSES[tokenOutKey];
-            const isEth = (tokenInKey === "ETH");
-
-            const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-            logStatus("Подтвердите транзакцию в вашем кошельке...");
-            
-            const tx = await contract.executeSwap(
-                tokenInAddr,
-                tokenOutAddr,
-                parsedAmountIn,
-                0, 
-                isEth,
-                { value: isEth ? parsedAmountIn : 0 }
-            );
-
-            logStatus(`Транзакция отправлена! Хеш: ${tx.hash}`);
-            await tx.wait();
-            logStatus("Обмен успешно выполнен в сети Base! 🎉");
-
-        } catch (err) {
-            console.error(err);
-            logStatus("Ошибка: " + (err.reason || err.message));
+        function resetGame() {
+            score = 0;
+            const animalsArea = document.getElementById('animalsArea');
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.querySelectorAll('.animal-item').forEach(item => animalsArea.appendChild(item));
+            });
+            updateProgress();
+            showFeedback('Игра перезапущена! 🚀', 'correct');
         }
-    }
 
-    function logStatus(text) {
-        const logBox = document.getElementById("statusLog");
-        logBox.style.display = "block";
-        logBox.innerText = text;
-    }
-</script>
-
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
 </body>
-</html>
+    </html>
+    
